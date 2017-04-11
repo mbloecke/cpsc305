@@ -1,7 +1,12 @@
-// This file is part of the materials accompanying the book 
-// "The Elements of Computing Systems" by Nisan and Schocken, 
-// MIT Press. Book site: www.idc.ac.il/tecs
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
 // File name: projects/06/pong/Pong.asm
+
+// The Pong game program was originally written in the high-level Jack language.
+// The Jack code was then translated by the Jack compiler into VM code.
+// The VM code was then translated by the VM translator into the Hack
+// assembly code shown here.
 
 @256
 D=A

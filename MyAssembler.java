@@ -1,9 +1,11 @@
 import java.util.Scanner;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.io.RandomAccessFile;
 import java.io.PrintWriter;
 
 public class MyAssembler {
+
+	static int snum;
 
 	public static void main(String[] args) {
 
@@ -11,10 +13,13 @@ public class MyAssembler {
             		System.out.println("Invalid usage: Assembler must take 1 argument. The name of the .asm file");
             		System.exit(0);
         	}
-        	
+		int aLineNum = -1;        	
         	int fileLine = 0;
         	int assemblyLine = 0;
-        	Hashtable<String, Integer> symbolTable = new Hashtable<String, Integer>();
+		String line = "";
+		snum = 16;
+        	HashMap<String, Integer> stable;
+		stable = loadStable();
 		RandomAccessFile file;        
 
 
@@ -23,20 +28,27 @@ public class MyAssembler {
 			file = new RandomAccessFile(args[0], "r");
 			PrintWriter p = new PrintWriter(filename.substring(0,filename.indexOf(".asm")) + ".hack", "UTF-8");
 
-		// check for valid asm file		
-
-
 		// go through file first time
-		
-
-
-                        String line = "";
-                        String hackLine = "";
-		
+			while(true){			
+				line = file.readLine();
+                                if(line == null){break;}
+				if(line != null && !line.equals("") && !line.trim().substring(0,1).equals("/")){
+					
+					if(line.trim().substring(0,1).equals("(") && line.contains(")")){
+						stable.put(line.substring(line.indexOf("(")+1, line.indexOf(")")), aLineNum+1);
+					} else {
+						aLineNum++;
+					}
+				}
+			}
+		// start actual assembly
+			file.seek(0);
+			aLineNum = -1;
                         while(true){
 				line = file.readLine();
 				if(line == null){break;}
-				if(line != null && !line.equals("") && !line.trim().substring(0,1).equals("/")){
+				if(line != null && !line.equals("") && !line.trim().substring(0,1).equals("/") && !line.trim().substring(0,1).equals("(")){
+					aLineNum++;
 					if(line.contains("/")){
                                 		line = line.substring(0,line.indexOf("/"));
                                 		line = line.replaceAll("\\s","");
@@ -44,7 +56,7 @@ public class MyAssembler {
                                 	// first take a line and determine if it is an A or C instruction
 					if(line.charAt(0) == '@'){
                                 		line = line.substring(1);
-						p.println(runA(line));
+						p.println(runA(line, stable));
 					} else {
 						p.println(runC(line));
 					}
@@ -52,25 +64,64 @@ public class MyAssembler {
 			
                         }
 			
-
-
-
-
-		p.close();
-		file.close();
-		} catch(Exception e){} // end of filenotfound catch block
+			p.close();
+			file.close();
+		} catch(Exception e){
+			System.out.println("There was an error in the .asm file on asm line " + aLineNum + ".");
+			System.out.println(line);
+		} // end of filenotfound catch block
 
 	}
 
-	static String runA(String line){
-		String bnum = Integer.toBinaryString(Integer.parseInt(line));
-		for(int i = bnum.length(); i<15; i++){
-			bnum = "0" + bnum;
+	static HashMap loadStable(){
+		HashMap<String, Integer> temp = new HashMap<String, Integer>();
+		for(int i=0; i<16; i++){
+			temp.put("R"+i, i);
 		}
-		return "0" + bnum;
+		temp.put("SCREEN", 16384);
+		temp.put("KBD", 24576);
+		temp.put("SP", 0);
+		temp.put("LCL", 1);
+		temp.put("ARG", 2);
+		temp.put("THIS", 3);
+		temp.put("THAT", 4);
+
+		return temp;			
 	}
 
-	static String runC(String line){
+
+	static String runA(String line, HashMap stable){
+
+		try{
+			Integer.parseInt(line);
+                	String bnum = Integer.toBinaryString(Integer.parseInt(line));
+                	for(int i = bnum.length(); i<15; i++){
+                        	bnum = "0" + bnum;
+			}
+	                return "0" + bnum;
+
+		} catch(NumberFormatException e){  
+  			if(stable.get(line) != null){
+				String bnum = Integer.toBinaryString((Integer)stable.get(line));
+				for(int i = bnum.length(); i<15; i++){
+					bnum = "0" + bnum;
+				}
+				return "0" + bnum;
+			} else {
+				stable.put(line, snum);
+				snum = snum+1;				
+				String bnum = Integer.toBinaryString((Integer)stable.get(line));
+                                for(int i = bnum.length(); i<15; i++){
+                                        bnum = "0" + bnum;
+                                }
+                                return "0" + bnum;
+			}
+		}
+	}
+
+	static String runC(String line) throws Exception{
+		try{
+
 		String c = "";
 		if(!line.contains("J")){
 			if(line.contains("=")){
@@ -90,9 +141,14 @@ public class MyAssembler {
 		}
 
 		return "111" + c;
+
+		} catch(Exception e){
+			throw e;
+		}
 	}
 
-	static String dest(String line){
+	static String dest(String line) throws Exception{
+
 		if(line.equals("M")){
 			return "001";
 		} else if(line.equals("D")){
@@ -108,10 +164,10 @@ public class MyAssembler {
 		} else if(line.equals("AMD")){
 			return "111";
 		}
-		return "DESTERROR"; // throw error and line number if bad
+		throw new Exception(); // throw error and line number if bad
 	}
 
-	static String jump(String line){
+	static String jump(String line) throws Exception{
 		if(line.equals("JGT")){
 			return "001";
 		} else if(line.equals("JEQ")){
@@ -127,12 +183,12 @@ public class MyAssembler {
 		} else if(line.equals("JMP")){
 			return "111";
 		}
-		return "JUMPERROR"; // throw error and line number if bad
+		throw new Exception(); // throw error and line number if bad
 	}
 
 
 	
-	static String comp(String line, String c){
+	static String comp(String line, String c) throws Exception{
 		if(line.contains("M")){
 			c = c + "1";
 		} else {
@@ -199,7 +255,7 @@ public class MyAssembler {
 				return "0010101";
 			}
 		}
-		return "COMPERROR"; // throw error if bad with line number
+		throw new Exception(); // throw error if bad with line number
 	} 
 	
 
