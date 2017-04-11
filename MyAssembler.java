@@ -1,6 +1,7 @@
 import java.util.Scanner;
 import java.util.Hashtable;
 import java.io.RandomAccessFile;
+import java.io.PrintWriter;
 
 public class MyAssembler {
 
@@ -18,53 +19,44 @@ public class MyAssembler {
 
 
         	String filename = args[0];
-        	System.out.println("pensifsfdlfse");
-		try{
+        	try{
 			file = new RandomAccessFile(args[0], "r");
-		
-		// check for valid asm file
-		try{
-		
-		} catch(Exception f){
-		}		
+			PrintWriter p = new PrintWriter(filename.substring(0,filename.indexOf(".asm")) + ".hack", "UTF-8");
+
+		// check for valid asm file		
 
 
 		// go through file first time
-		try{
-			file.seek(0); // go back to beginning
-		} catch(Exception f){
-		}
+		
 
 
-                try{
                         String line = "";
                         String hackLine = "";
-
+		
                         while(true){
-			line = file.readLine();
-			if(line != null && !line.trim().isEmpty() && !line.trim().substring(0).equals("/")){
-				if(line.contains("/")){
-                                	line = line.substring(0,line.indexOf("/"));
-                                	line = line.replaceAll("\\s","");
+				line = file.readLine();
+				if(line == null){break;}
+				if(line != null && !line.equals("") && !line.trim().substring(0,1).equals("/")){
+					if(line.contains("/")){
+                                		line = line.substring(0,line.indexOf("/"));
+                                		line = line.replaceAll("\\s","");
+					}
+                                	// first take a line and determine if it is an A or C instruction
+					if(line.charAt(0) == '@'){
+                                		line = line.substring(1);
+						p.println(runA(line));
+					} else {
+						p.println(runC(line));
+					}
 				}
-                                 // first take a line and determine if it is an A or C instruction
-				if(line.charAt(0) == '@'){
-                                	line = line.substring(1);
-					System.out.println(runA(line));
-				} else {
-					System.out.println(runC(line));
-				}
-			}
+			
                         }
-
-                } catch(Exception f){
-
-                }
+			
 
 
 
 
-
+		p.close();
 		file.close();
 		} catch(Exception e){} // end of filenotfound catch block
 
