@@ -53,12 +53,13 @@ public class MyAssembler {
                                 		line = line.substring(0,line.indexOf("/"));
                                 		line = line.replaceAll("\\s","");
 					}
+					line = line.trim();
                                 	// first take a line and determine if it is an A or C instruction
 					if(line.charAt(0) == '@'){
                                 		line = line.substring(1);
-						p.println(runA(line, stable));
+						p.println(runA(line.trim(), stable));
 					} else {
-						p.println(runC(line));
+						p.println(runC(line.trim()));
 					}
 				}
 			
